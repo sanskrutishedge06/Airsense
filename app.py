@@ -36,9 +36,14 @@ from skfuzzy import control as ctrl
 app = Flask(__name__)
 
 # ---------------------------------------------------
-# Load your trained model (Random Forest, 1-hour horizon)
+# Load your trained models (Random Forest, 1-hour, 6-hour and 24-hour horizons)
 # ---------------------------------------------------
-model = joblib.load("model_target_1hr.pkl")
+MODEL_FILES = {
+    "1hr": "model_target_1hr.pkl",
+    "6hr": "model_target_6hr.pkl",
+    "24hr": "model_target_24hr.pkl",
+}
+models = {name: joblib.load(path) for name, path in MODEL_FILES.items()}
 
 TRAINED_LOCATION = {"lat": 18.7327, "lon": 73.6752, "name": "Talegaon Dabhade"}
 
@@ -159,8 +164,15 @@ def predict():
     }
 
     X = pd.DataFrame([row])[FEATURE_COLS]
-    predicted_pm25 = float(model.predict(X)[0])
-    category, risk_score = classify_aqi(predicted_pm25)
+    predictions = {}
+    for name, m in models.items():
+        p = float(m.predict(X)[0])
+        cat, score = classify_aqi(p)
+        predictions[name] = {
+            "predicted_pm2_5": round(p, 2),
+            "risk_category": cat,
+            "risk_score": score,
+        }
 
     is_trained_location = (
         abs(lat - TRAINED_LOCATION["lat"]) < 0.05
@@ -171,9 +183,7 @@ def predict():
         "location": {"lat": lat, "lon": lon},
         "current_reading_time": str(current["time"]),
         "current_pm2_5": current["pm2_5"],
-        "predicted_pm2_5_next_hour": round(predicted_pm25, 2),
-        "risk_category": category,
-        "risk_score": risk_score,
+        "predictions": predictions,
         "location_note": (
             f"Model trained on {TRAINED_LOCATION['name']} data. "
             + ("This request matches the trained location."
