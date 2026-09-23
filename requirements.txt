@@ -1,0 +1,10 @@
+flask
+pandas
+numpy
+requests
+scikit-learn
+scikit-fuzzy
+networkx
+joblib
+gunicorn
+packaging
