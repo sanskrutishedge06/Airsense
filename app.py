@@ -112,7 +112,7 @@ def fetch_recent_data(lat, lon):
     }, inplace=True)
     df["time"] = pd.to_datetime(df["time"])
     df = df.sort_values("time").reset_index(drop=True)
-    return df
+    return df, data.get("utc_offset_seconds", 0)
 
 
 @app.route("/")
@@ -125,10 +125,13 @@ def predict():
     lat = float(request.args.get("lat", TRAINED_LOCATION["lat"]))
     lon = float(request.args.get("lon", TRAINED_LOCATION["lon"]))
 
-    df = fetch_recent_data(lat, lon)
+    df, utc_offset = fetch_recent_data(lat, lon)
+
+    # "now" in the location's local time (server clock is UTC on Render)
+    now = (pd.Timestamp.now(tz="UTC").tz_localize(None)
+           + pd.Timedelta(seconds=utc_offset)).floor("h")
 
     # Find the row closest to "now" so we predict from the most current reading
-    now = pd.Timestamp.now().floor("h")
     diffs = (df["time"] - now).abs()
     idx = int(diffs.values.argmin())
 
@@ -136,7 +139,6 @@ def predict():
         return jsonify({
             "error": "Not enough historical hours returned to compute lag features. Try again shortly."
         }), 400
-
     current = df.iloc[idx]
     lag1 = df.iloc[idx - 1]["pm2_5"]
     lag3 = df.iloc[idx - 3]["pm2_5"]
