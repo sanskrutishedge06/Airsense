@@ -25,7 +25,7 @@ Then visit:
     http://127.0.0.1:5000/predict?lat=18.7327&lon=73.6752
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import requests
 import pandas as pd
 import numpy as np
@@ -122,7 +122,7 @@ def fetch_recent_data(lat, lon):
 
 @app.route("/")
 def home():
-    return "AirSense AQI Prediction Server is running."
+    return render_template("index.html")
 
 
 @app.route("/predict", methods=["GET"])

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AirSense | Air quality forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a1f33;--teal:#0f4c5c;--ink:#12232e;--muted:#5d707c;--bg:#eef3f6;--card:#fff;--line:#dbe5ea;
+  --good:#1f9d6b;--moderate:#d99a1b;--poor:#e2702f;--severe:#b3261e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.55}
+
+/* ---------- hero ---------- */
+.hero{position:relative;color:#fff;padding:26px 20px 110px;overflow:hidden;
+  background:
+   radial-gradient(600px 300px at 85% -10%,rgba(80,200,190,.35),transparent 70%),
+   radial-gradient(500px 320px at 5% 110%,rgba(60,120,200,.30),transparent 70%),
+   linear-gradient(165deg,var(--navy),var(--teal))}
+.hero::after{content:"";position:absolute;inset:auto -10% -1px -10%;height:70px;background:var(--bg);border-radius:50% 50% 0 0/100% 100% 0 0}
+.wrap{max-width:960px;margin:0 auto;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;letter-spacing:-.01em}
+.brand svg{width:30px;height:30px}
+h1{font-size:clamp(2.1rem,6vw,3.6rem);line-height:1.05;font-weight:800;letter-spacing:-.03em;margin:54px 0 14px;max-width:16ch}
+.lead{color:#c5dbe3;font-size:1.08rem;max-width:52ch;margin:0 0 30px}
+
+form{display:flex;gap:8px;background:#fff;padding:7px;border-radius:16px;box-shadow:0 18px 40px -18px rgba(0,0,0,.55);max-width:620px}
+input{flex:1;min-width:0;border:0;padding:12px 14px;font:inherit;font-size:1.02rem;color:var(--ink);background:transparent;border-radius:10px}
+input:focus{outline:none}
+form:focus-within{outline:3px solid #7cc7ff;outline-offset:2px}
+.btn{border:0;font:inherit;font-weight:600;border-radius:11px;padding:12px 20px;cursor:pointer;background:var(--navy);color:#fff;white-space:nowrap}
+.btn:hover{background:#12314f}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.45);padding:10px 16px}
+.btn.ghost:hover{background:rgba(255,255,255,.1)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.chip{font:inherit;font-size:.9rem;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);padding:6px 14px;border-radius:99px;cursor:pointer}
+.chip:hover{background:rgba(255,255,255,.22)}
+:focus-visible{outline:3px solid #7cc7ff;outline-offset:2px}
+
+/* ---------- results ---------- */
+main{max-width:960px;margin:-64px auto 0;padding:0 20px 56px;position:relative;z-index:2}
+#status{display:none;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;color:var(--muted);box-shadow:0 10px 30px -20px rgba(10,31,51,.5)}
+#status.show{display:flex}
+#status.err{color:var(--severe);border-color:#f0c9c6;background:#fff7f6}
+.spin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:sp .8s linear infinite;flex:none}
+#status.err .spin{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 14px 34px -24px rgba(10,31,51,.5)}
+#out{display:none;gap:18px;flex-direction:column}
+#out.show{display:flex}
+.sum{display:flex;gap:18px;align-items:flex-start;border-left:8px solid var(--c);}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--c);margin-top:9px;flex:none;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 22%,transparent)}
+.sum h2{margin:0;font-size:clamp(1.3rem,3.4vw,1.8rem);line-height:1.2;letter-spacing:-.02em}
+.sum p{margin:6px 0 0;color:var(--muted)}
+.sum .place{font-weight:600;color:var(--ink);margin-bottom:2px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px -26px rgba(10,31,51,.6)}
+.tile .band{height:8px;background:var(--c,var(--line))}
+.tile .in{padding:16px 18px 18px}
+.when{color:var(--muted);font-size:.92rem;font-weight:600}
+.val{font-size:2.5rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:4px 0 8px}
+.val small{font-size:.85rem;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:2px}
+.tag{display:inline-block;border-radius:99px;padding:3px 12px;font-size:.88rem;font-weight:600;color:#fff;background:var(--c)}
+.tag.Moderate{color:#2a1c00}
+.meta{font-size:.84rem;color:var(--muted);margin-top:8px}
+
+.card h3{margin:0 0 4px;font-size:1.05rem}
+.card .hint{margin:0 0 6px;color:var(--muted);font-size:.9rem}
+svg.chart{width:100%;height:auto;display:block}
+.chart text{font-family:inherit;fill:var(--muted);font-size:12px}
+.chart .v{fill:var(--ink);font-weight:700;font-size:13px}
+
+.note{font-size:.84rem;color:var(--muted);max-width:75ch}
+.empty{text-align:center;color:var(--muted);padding:34px 10px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:6px}
+.steps div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.steps b{display:block;margin-bottom:4px}
+.steps span{color:var(--muted);font-size:.92rem}
+
+footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:560px){
+  form{flex-wrap:wrap} input{flex-basis:100%} .btn{flex:1}
+  .hero{padding-bottom:100px} h1{margin-top:38px}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2s}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" stroke="#7fe0d0" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 12h15a4 4 0 1 0-4-4"/><path d="M4 19h21a4 4 0 1 1-4 4"/><path d="M4 26h9"/>
+      </svg>
+      AirSense
+    </div>
+    <h1>Know the air before you step out.</h1>
+    <p class="lead">Search any city for today's PM2.5 dust level and a forecast for the next hour, six hours and 24 hours, with a clear risk rating.</p>
+
+    <form id="f">
+      <input id="q" placeholder="Search a city, e.g. Pune" aria-label="City name" autocomplete="off">
+      <button class="btn" id="go" type="submit">Get forecast</button>
+    </form>
+    <div class="row">
+      <button class="chip" data-city="Talegaon Dabhade" type="button">Talegaon Dabhade</button>
+      <button class="chip" data-city="Pune" type="button">Pune</button>
+      <button class="chip" data-city="Mumbai" type="button">Mumbai</button>
+      <button class="chip" data-city="Delhi" type="button">Delhi</button>
+      <button class="btn ghost" id="loc" type="button">Use my location</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="status" role="status"><div class="spin"></div><span id="stxt"></span></div>
+
+  <section id="out" aria-live="polite">
+    <div class="card sum" id="sum"></div>
+    <div class="grid" id="grid"></div>
+    <div class="card">
+      <h3>PM2.5 trend</h3>
+      <p class="hint">Predicted fine-dust level (&micro;g/m&sup3;). Dot colors show the risk rating.</p>
+      <div id="chart"></div>
+    </div>
+    <p class="note" id="note"></p>
+  </section>
+
+  <section id="empty">
+    <div class="steps">
+      <div><b>1. Pick a place</b><span>Type a city or use your current location.</span></div>
+      <div><b>2. Get the forecast</b><span>A machine-learning model predicts dust levels ahead.</span></div>
+      <div><b>3. Read the risk</b><span>Fuzzy logic turns the number into Good, Moderate, Poor or Severe.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer>PM2.5 data from Open-Meteo. The model was trained on Talegaon Dabhade, so forecasts for other places are not validated.</footer>
+
+<script>
+// Served by the same Flask app, so a relative URL works. If opened as a local file, call the live server.
+const API = location.protocol === "file:" ? "https://airsense-tnu7.onrender.com" : "";
+const COL = {Good:"var(--good)", Moderate:"var(--moderate)", Poor:"var(--poor)", Severe:"var(--severe)"};
+const RANK = {Good:0, Moderate:1, Poor:2, Severe:3};
+const HEAD = {
+  Good:"Air quality looks good for the next 24 hours.",
+  Moderate:"Expect moderate air quality in the next 24 hours.",
+  Poor:"Air quality may turn poor in the next 24 hours.",
+  Severe:"Severe air pollution is forecast in the next 24 hours."
+};
+const ADVICE = {
+  Good:"Fine for outdoor activity for most people.",
+  Moderate:"Sensitive people should limit long outdoor exertion.",
+  Poor:"Reduce outdoor exercise and consider wearing a mask.",
+  Severe:"Avoid outdoor activity and keep windows closed."
+};
+const $ = id => document.getElementById(id);
+
+function status(msg, err){
+  const s = $("status");
+  $("stxt").textContent = msg || "";
+  s.className = msg ? ("show" + (err ? " err" : "")) : "";
+}
+function busy(b){ $("go").disabled = b; $("loc").disabled = b; }
+
+async function geocode(name){
+  const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + encodeURIComponent(name));
+  const d = await r.json();
+  if(!d.results || !d.results.length) throw new Error('Could not find "' + name + '". Check the spelling or try a nearby city.');
+  const p = d.results[0];
+  return {lat:p.latitude, lon:p.longitude, label:[p.name, p.admin1, p.country].filter(Boolean).join(", ")};
+}
+
+async function forecast(lat, lon, label){
+  status("Getting the forecast. The first request can take up to a minute if the server was asleep.");
+  busy(true);
+  try{
+    const r = await fetch(API + "/predict?lat=" + lat + "&lon=" + lon);
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || "The server returned an error. Try again shortly.");
+    render(d, label);
+    status("");
+  }catch(e){
+    status(e.message || "Something went wrong. Try again.", true);
+  }finally{ busy(false); }
+}
+
+function tile(when, pm, cat, score){
+  const c = cat ? COL[cat] : "var(--line)";
+  return '<div class="tile" style="--c:' + c + '"><div class="band"></div><div class="in">' +
+    '<div class="when">' + when + '</div>' +
+    '<div class="val">' + Number(pm).toFixed(1) + '<small>&micro;g/m&sup3;</small></div>' +
+    (cat ? '<span class="tag ' + cat + '">' + cat + '</span><div class="meta">Risk score ' + score + ' of 100</div>'
+         : '<span class="meta">Latest reading</span>') +
+    '</div></div>';
+}
+
+function chart(pts){
+  const W = 600, H = 230, pl = 44, pr = 36, pt = 30, pb = 40, n = pts.length;
+  const max = Math.max(20, ...pts.map(p => p.v)) * 1.25;
+  const x = i => pl + i * (W - pl - pr) / (n - 1);
+  const y = v => pt + (H - pt - pb) * (1 - v / max);
+  let g = "";
+  [0, max / 2, max].forEach(t => {
+    g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="#dbe5ea" stroke-dasharray="3 4"/>' +
+         '<text x="' + (pl - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + Math.round(t) + '</text>';
+  });
+  const line = pts.map((p, i) => (i ? "L" : "M") + x(i) + " " + y(p.v)).join(" ");
+  const area = line + " L" + x(n - 1) + " " + y(0) + " L" + x(0) + " " + y(0) + " Z";
+  let dots = "";
+  pts.forEach((p, i) => {
+    const c = p.cat ? COL[p.cat] : "var(--ink)";
+    dots += '<circle cx="' + x(i) + '" cy="' + y(p.v) + '" r="7" style="fill:' + c + '" stroke="#fff" stroke-width="3"/>' +
+      '<text class="v" x="' + x(i) + '" y="' + (y(p.v) - 14) + '" text-anchor="middle">' + p.v.toFixed(1) + '</text>' +
+      '<text x="' + x(i) + '" y="' + (H - 12) + '" text-anchor="middle">' + p.l + '</text>';
+  });
+  return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="PM2.5 now and forecast">' +
+    '<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f4c5c" stop-opacity=".22"/><stop offset="1" stop-color="#0f4c5c" stop-opacity="0"/></linearGradient></defs>' +
+    g + '<path d="' + area + '" fill="url(#ag)"/><path d="' + line + '" fill="none" stroke="#0f4c5c" stroke-width="2.5" stroke-linejoin="round"/>' + dots + '</svg>';
+}
+
+function render(d, label){
+  const p = d.predictions;
+  const keys = ["1hr", "6hr", "24hr"].filter(k => p[k]);
+  const worst = keys.reduce((w, k) => RANK[p[k].risk_category] > RANK[w] ? p[k].risk_category : w, "Good");
+
+  $("sum").style.setProperty("--c", COL[worst]);
+  $("sum").innerHTML = '<span class="dot"></span><div>' +
+    '<div class="place">' + (label || (d.location.lat.toFixed(3) + ", " + d.location.lon.toFixed(3))) + '</div>' +
+    '<h2>' + HEAD[worst] + '</h2><p>' + ADVICE[worst] + '</p></div>';
+
+  const names = {"1hr":"In 1 hour", "6hr":"In 6 hours", "24hr":"In 24 hours"};
+  let html = tile("Now", d.current_pm2_5, null);
+  keys.forEach(k => html += tile(names[k], p[k].predicted_pm2_5, p[k].risk_category, p[k].risk_score));
+  $("grid").innerHTML = html;
+
+  const short = {"1hr":"+1 h", "6hr":"+6 h", "24hr":"+24 h"};
+  $("chart").innerHTML = chart([{l:"Now", v:d.current_pm2_5, cat:null}]
+    .concat(keys.map(k => ({l:short[k], v:p[k].predicted_pm2_5, cat:p[k].risk_category}))));
+
+  $("note").textContent = "Reading time: " + d.current_reading_time + " (local time). " + d.location_note;
+  $("out").classList.add("show");
+  $("empty").style.display = "none";
+  $("out").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+async function search(name){
+  if(!name){ status("Enter a city name first.", true); return; }
+  try{
+    status("Finding " + name + "...");
+    const g = await geocode(name);
+    await forecast(g.lat, g.lon, g.label);
+  }catch(err){ status(err.message, true); }
+}
+
+$("f").addEventListener("submit", e => { e.preventDefault(); search($("q").value.trim()); });
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { $("q").value = b.dataset.city; search(b.dataset.city); }));
+$("loc").addEventListener("click", () => {
+  if(!navigator.geolocation){ status("Your browser does not support location.", true); return; }
+  status("Finding your location...");
+  navigator.geolocation.getCurrentPosition(
+    pos => forecast(pos.coords.latitude, pos.coords.longitude, "Your location"),
+    () => status("Location permission was denied. Type a city instead.", true)
+  );
+});
+</script>
+</body>
+</html>
