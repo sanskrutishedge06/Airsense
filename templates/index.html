@@ -44,7 +44,7 @@ form:focus-within{outline:3px solid #7cc7ff;outline-offset:2px}
 :focus-visible{outline:3px solid #7cc7ff;outline-offset:2px}
 
 /* ---------- results ---------- */
-main{max-width:960px;margin:-64px auto 0;padding:0 20px 56px;position:relative;z-index:2}
+main{max-width:960px;margin:-64px auto 0;padding:0 20px 24px;position:relative;z-index:2}
 #status{display:none;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;color:var(--muted);box-shadow:0 10px 30px -20px rgba(10,31,51,.5)}
 #status.show{display:flex}
 #status.err{color:var(--severe);border-color:#f0c9c6;background:#fff7f6}
@@ -53,7 +53,7 @@ main{max-width:960px;margin:-64px auto 0;padding:0 20px 56px;position:relative;z
 @keyframes sp{to{transform:rotate(360deg)}}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 14px 34px -24px rgba(10,31,51,.5)}
-#out{display:none;gap:18px;flex-direction:column}
+#out{display:none;gap:18px;flex-direction:column;margin-bottom:18px}
 #out.show{display:flex}
 .sum{display:flex;gap:18px;align-items:flex-start;border-left:8px solid var(--c);}
 .dot{width:14px;height:14px;border-radius:50%;background:var(--c);margin-top:9px;flex:none;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 22%,transparent)}
@@ -73,13 +73,31 @@ main{max-width:960px;margin:-64px auto 0;padding:0 20px 56px;position:relative;z
 .meta{font-size:.84rem;color:var(--muted);margin-top:8px}
 
 .card h3{margin:0 0 4px;font-size:1.05rem}
-.card .hint{margin:0 0 6px;color:var(--muted);font-size:.9rem}
+.card .hint{margin:0 0 14px;color:var(--muted);font-size:.9rem}
 svg.chart{width:100%;height:auto;display:block}
 .chart text{font-family:inherit;fill:var(--muted);font-size:12px}
 .chart .v{fill:var(--ink);font-weight:700;font-size:13px}
 
+/* pollutant pills */
+.pollgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.poll{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.poll .name{font-size:.82rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.poll .amt{font-size:1.3rem;font-weight:800;margin-top:2px}
+.poll .amt small{font-size:.78rem;font-weight:400;color:var(--muted)}
+
+/* manual test panel */
+.testrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.testrow input{flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font:inherit;color:var(--ink);background:#fff}
+.testrow input:focus{outline:none;border-color:#7cc7ff}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.preset{font:inherit;font-size:.85rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;cursor:pointer;color:var(--ink)}
+.preset:hover{background:var(--bg)}
+#testResult{margin-top:14px;display:none;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);border-left-width:8px}
+#testResult.show{display:flex}
+#testResult .tv{font-size:1.8rem;font-weight:800}
+#testResult .tv small{font-size:.8rem;font-weight:400;color:var(--muted)}
+
 .note{font-size:.84rem;color:var(--muted);max-width:75ch}
-.empty{text-align:center;color:var(--muted);padding:34px 10px}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:6px}
 .steps div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .steps b{display:block;margin-bottom:4px}
@@ -105,7 +123,7 @@ footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font
       AirSense
     </div>
     <h1>Know the air before you step out.</h1>
-    <p class="lead">Search any city for today's PM2.5 dust level and a forecast for the next hour, six hours and 24 hours, with a clear risk rating.</p>
+    <p class="lead">Search any city for today's pollutant readings and a PM2.5 forecast for the next hour, six hours and 24 hours, with a clear risk rating.</p>
 
     <form id="f">
       <input id="q" placeholder="Search a city, e.g. Pune" aria-label="City name" autocomplete="off">
@@ -132,6 +150,11 @@ footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font
       <p class="hint">Predicted fine-dust level (&micro;g/m&sup3;). Dot colors show the risk rating.</p>
       <div id="chart"></div>
     </div>
+    <div class="card">
+      <h3>Current pollutant levels</h3>
+      <p class="hint">All values in &micro;g/m&sup3;, from the same live reading used for the forecast.</p>
+      <div class="pollgrid" id="pollgrid"></div>
+    </div>
     <p class="note" id="note"></p>
   </section>
 
@@ -142,9 +165,26 @@ footer{max-width:960px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font
       <div><b>3. Read the risk</b><span>Fuzzy logic turns the number into Good, Moderate, Poor or Severe.</span></div>
     </div>
   </section>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Try a PM2.5 value</h3>
+    <p class="hint">See how the risk rating responds across its full range, independent of today's actual weather &mdash; useful for demos.</p>
+    <p class="hint" style="margin-bottom:14px"><strong>Demo mode</strong> &mdash; bypasses live data to test the fuzzy logic classifier directly.</p>
+    <div class="testrow">
+      <input id="testInput" type="number" min="0" max="500" step="1" placeholder="Enter a PM2.5 value, e.g. 120" aria-label="PM2.5 value to test">
+      <button class="btn" id="testGo" type="button">Check rating</button>
+    </div>
+    <div class="presets">
+      <button class="preset" data-v="15" type="button">15 &middot; typical Good</button>
+      <button class="preset" data-v="45" type="button">45 &middot; typical Moderate</button>
+      <button class="preset" data-v="75" type="button">75 &middot; typical Poor</button>
+      <button class="preset" data-v="150" type="button">150 &middot; typical Severe</button>
+    </div>
+    <div id="testResult"></div>
+  </div>
 </main>
 
-<footer>PM2.5 data from Open-Meteo. The model was trained on Talegaon Dabhade, so forecasts for other places are not validated.</footer>
+<footer>PM2.5, PM10, CO, NO&sub2; and O&sub3; data from Open-Meteo. The forecast model was trained on Talegaon Dabhade, so forecasts for other places are not validated.</footer>
 
 <script>
 // Served by the same Flask app, so a relative URL works. If opened as a local file, call the live server.
@@ -163,6 +203,7 @@ const ADVICE = {
   Poor:"Reduce outdoor exercise and consider wearing a mask.",
   Severe:"Avoid outdoor activity and keep windows closed."
 };
+const POLL_LABELS = {pm2_5:"PM2.5", pm10:"PM10", co:"CO", no2:"NO\u2082", o3:"O\u2083"};
 const $ = id => document.getElementById(id);
 
 function status(msg, err){
@@ -228,6 +269,15 @@ function chart(pts){
     g + '<path d="' + area + '" fill="url(#ag)"/><path d="' + line + '" fill="none" stroke="#0f4c5c" stroke-width="2.5" stroke-linejoin="round"/>' + dots + '</svg>';
 }
 
+function pollutants(p){
+  if(!p) return '<p class="hint" style="margin:0">Not returned by the server for this request.</p>';
+  return Object.keys(POLL_LABELS).map(k => {
+    if(!(k in p)) return "";
+    return '<div class="poll"><div class="name">' + POLL_LABELS[k] + '</div>' +
+      '<div class="amt">' + Number(p[k]).toFixed(1) + ' <small>&micro;g/m&sup3;</small></div></div>';
+  }).join("");
+}
+
 function render(d, label){
   const p = d.predictions;
   const keys = ["1hr", "6hr", "24hr"].filter(k => p[k]);
@@ -246,6 +296,8 @@ function render(d, label){
   const short = {"1hr":"+1 h", "6hr":"+6 h", "24hr":"+24 h"};
   $("chart").innerHTML = chart([{l:"Now", v:d.current_pm2_5, cat:null}]
     .concat(keys.map(k => ({l:short[k], v:p[k].predicted_pm2_5, cat:p[k].risk_category}))));
+
+  $("pollgrid").innerHTML = pollutants(d.pollutants);
 
   $("note").textContent = "Reading time: " + d.current_reading_time + " (local time). " + d.location_note;
   $("out").classList.add("show");
@@ -272,6 +324,37 @@ $("loc").addEventListener("click", () => {
     () => status("Location permission was denied. Type a city instead.", true)
   );
 });
+
+/* ---------- manual PM2.5 test panel ---------- */
+async function runTest(value){
+  const box = $("testResult");
+  box.className = "show";
+  box.style.borderLeftColor = "var(--line)";
+  box.innerHTML = '<div class="spin"></div><span>Checking...</span>';
+  try{
+    const r = await fetch(API + "/test?pm25=" + encodeURIComponent(value));
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || "Could not check this value.");
+    const c = COL[d.risk_category] || "var(--muted)";
+    box.style.borderLeftColor = c;
+    box.innerHTML = '<span class="tag" style="background:' + c + '">' + d.risk_category + '</span>' +
+      '<div class="tv">' + d.input_pm2_5 + ' <small>&micro;g/m&sup3; input</small></div>' +
+      '<div class="tv">' + d.risk_score + ' <small>risk score / 100</small></div>';
+  }catch(e){
+    box.style.borderLeftColor = "var(--severe)";
+    box.innerHTML = '<span style="color:var(--severe)">' + (e.message || "Something went wrong.") + '</span>';
+  }
+}
+$("testGo").addEventListener("click", () => {
+  const v = $("testInput").value;
+  if(v === "" || isNaN(v)){ $("testInput").focus(); return; }
+  runTest(v);
+});
+$("testInput").addEventListener("keydown", e => { if(e.key === "Enter") $("testGo").click(); });
+document.querySelectorAll(".preset").forEach(b => b.addEventListener("click", () => {
+  $("testInput").value = b.dataset.v;
+  runTest(b.dataset.v);
+}));
 </script>
 </body>
 </html>
